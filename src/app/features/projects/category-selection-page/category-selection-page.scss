@@ -1,0 +1,59 @@
+.back-to-projects {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--teal-dark);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+.back-to-projects:hover {
+  background: var(--teal-soft);
+  border-color: #addfec;
+}
+
+.project-intro h1 {
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.project-card-meta {
+  justify-content: flex-start;
+}
+
+.project-card-meta .active-project-label {
+  color: var(--teal-dark);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 640px) {
+  .back-to-projects {
+    font-size: 0.78rem;
+    padding: 7px 10px;
+  }
+}
+header {
+  align-items: center;
+  border-bottom: 1px solid rgba(184, 202, 215, 0.7);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  margin: 0 auto;
+  max-width: 1240px;
+  padding: 24px 32px;
+}
+
+.user-name {
+  justify-self: start;
+}
+
+.logo {
+  justify-self: end;
+}
+
+.back-to-projects {
+  justify-self: start;
+}

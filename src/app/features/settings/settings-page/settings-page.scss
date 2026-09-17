@@ -1,0 +1,84 @@
+@use '../../../../styles/mixins' as shared;
+
+@include shared.component-host-contents;
+
+.catalog-list {
+  background: color-mix(in srgb, var(--slate-100) 78%, var(--surface));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px;
+  padding-inline-end: 8px;
+  @include shared.vertical-scrollbar;
+}
+
+.catalog-list .catalog-row {
+  background: linear-gradient(145deg, var(--surface) 0%, var(--slate-50) 100%);
+  border: 1px solid color-mix(in srgb, var(--slate-300) 82%, var(--line));
+  box-shadow:
+    0 5px 14px rgb(15 23 42 / 9%),
+    0 1px 3px rgb(15 23 42 / 7%);
+  min-height: 64px;
+  padding: 13px 15px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.catalog-list .catalog-row:hover {
+  border-color: color-mix(in srgb, var(--teal) 38%, var(--slate-300));
+  box-shadow:
+    0 9px 22px rgb(15 23 42 / 12%),
+    0 2px 5px rgb(15 23 42 / 8%);
+  transform: translateY(-1px);
+}
+
+.catalog-list .catalog-row strong {
+  color: var(--slate-900);
+}
+
+.catalog-state-message {
+  @include shared.feedback-surface(var(--slate-200), var(--slate-50), var(--slate-500));
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.catalog-state-message.error {
+  @include shared.feedback-colors(var(--danger-border), var(--red-soft), var(--danger-text));
+}
+
+.hospital-catalog-row,
+.unit-catalog-row,
+.trigger-catalog-row,
+.placeholder-catalog-row,
+.category-catalog-row,
+.static-value-catalog-row {
+  grid-template-columns: 1fr;
+}
+
+.schema-table-name {
+  margin-top: 0;
+  line-height: 1.6;
+}
+
+.schema-table-name .code {
+  white-space: nowrap;
+}
+
+.schema-detail-label {
+  color: var(--slate-700);
+  font-weight: 900;
+}
+
+@media (max-width: 720px) {
+  .catalog-list {
+    max-height: 260px;
+  }
+}

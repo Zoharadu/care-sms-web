@@ -1,0 +1,512 @@
+        @if (toastMessage) {
+          <div
+            class="template-toast"
+            [attr.role]="toastTone === 'error' ? 'alert' : 'status'"
+            [attr.aria-live]="toastTone === 'error' ? 'assertive' : 'polite'"
+            [style.background]="toastTone === 'error' ? 'var(--red-soft)' : null"
+            [style.border-color]="toastTone === 'error' ? 'var(--danger-border)' : null"
+            [style.color]="toastTone === 'error' ? 'var(--red)' : null"
+          >
+            @if (toastTone === 'success') {
+              <span class="template-toast-icon" aria-hidden="true">✓</span>
+            }
+            <span>{{ toastMessage }}</span>
+            <button type="button" aria-label="סגירת ההודעה" (click)="dismissToast()">×</button>
+          </div>
+        }
+
+        <dialog
+          #templateDeleteDialog
+          class="template-delete-dialog"
+          role="alertdialog"
+          aria-labelledby="template-delete-title"
+          aria-describedby="template-delete-description"
+          (cancel)="handleTemplateDeleteCancel($event)"
+          (click)="handleTemplateDeleteDialogClick($event)"
+        >
+          <div class="template-delete-icon" aria-hidden="true">🗑</div>
+          <div class="template-delete-content">
+            <h2 id="template-delete-title">מחיקת תבנית</h2>
+            <p id="template-delete-description">
+              האם למחוק לצמיתות את התבנית
+              <strong>„{{ templatePendingDeletion?.name }}”</strong>?
+            </p>
+            <p class="template-delete-warning">
+              כל הגרסאות ונוסחי השפות של התבנית יימחקו. לא ניתן לבטל פעולה זו.
+            </p>
+
+            @if (templateDeleteError) {
+              <p class="template-delete-error" role="alert">{{ templateDeleteError }}</p>
+            }
+          </div>
+
+          <footer class="template-delete-actions">
+            <button
+              type="button"
+              class="ghost-action"
+              autofocus
+              [disabled]="templateDeleting"
+              (click)="cancelTemplateDeletion()"
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              class="confirm-delete-action"
+              [disabled]="templateDeleting"
+              (click)="confirmTemplateDeletion()"
+            >
+              {{ templateDeleting ? 'מוחק...' : 'כן, למחוק' }}
+            </button>
+          </footer>
+        </dialog>
+
+        <dialog
+          #templateCreateDialog
+          class="template-edit-dialog template-create-dialog centered-template-dialog"
+          aria-labelledby="template-create-title"
+          (cancel)="handleTemplateCreateCancel($event)"
+          (click)="handleTemplateCreateDialogClick($event)"
+        >
+          <form class="template-create-form" (ngSubmit)="createTemplate()">
+            <header class="template-edit-heading">
+              <div>
+                <p class="eyebrow">יצירת תבנית</p>
+                <h2 id="template-create-title">פרטי התבנית החדשה</h2>
+              </div>
+              <button
+                type="button"
+                class="template-dialog-close"
+                aria-label="סגירת חלון יצירת התבנית"
+                [disabled]="createTemplateSubmitting"
+                (click)="cancelCreateTemplate()"
+              >
+                ×
+              </button>
+            </header>
+
+            <div class="template-edit-fields">
+              <label>
+                שם התבנית
+                <input
+                  name="newTemplateName"
+                  required
+                  autofocus
+                  [disabled]="createTemplateSubmitting"
+                  [(ngModel)]="newTemplateName"
+                  placeholder="לדוגמה: תזכורת לביקור"
+                />
+              </label>
+              <label>
+                אירוע קליני מפעיל
+                <select
+                  class="template-trigger-select"
+                  name="newTemplateTriggerId"
+                  required
+                  [disabled]="createTemplateSubmitting || triggerCatalogLoading"
+                  [(ngModel)]="newTemplateTriggerId"
+                >
+                  <option [ngValue]="null" disabled hidden>
+                    {{ triggerCatalogLoading ? 'טוען אירועים קליניים...' : 'בחירת אירוע קליני' }}
+                  </option>
+                  @for (trigger of triggerCatalog; track trigger.triggerId) {
+                    <option [ngValue]="trigger.triggerId">{{ trigger.description }}</option>
+                  }
+                </select>
+                @if (triggerCatalogError) {
+                  <small class="template-edit-error" role="alert">{{ triggerCatalogError }}</small>
+                }
+              </label>
+              <label>
+                תיאור
+                <textarea
+                  name="newTemplateDescription"
+                  rows="3"
+                  [disabled]="createTemplateSubmitting"
+                  [(ngModel)]="newTemplateDescription"
+                  placeholder="תיאור קצר של מטרת התבנית"
+                ></textarea>
+              </label>
+              <label>
+                סטטוס
+                <span class="template-active-control">
+                  <input
+                    name="newTemplateActive"
+                    type="checkbox"
+                    [disabled]="createTemplateSubmitting"
+                    [(ngModel)]="newTemplateActive"
+                  />
+                  תבנית פעילה
+                </span>
+              </label>
+              <p class="template-create-hint">
+                לאחר היצירה התבנית תיפתח בעורך הראשי, ושם ניתן יהיה להוסיף את נוסחי
+                ההודעות בכל שפה.
+              </p>
+            </div>
+
+            @if (newTemplateError) {
+              <p class="template-edit-error" role="alert">{{ newTemplateError }}</p>
+            }
+
+            <footer class="template-edit-actions">
+              <button
+                type="button"
+                class="ghost-action"
+                [disabled]="createTemplateSubmitting"
+                (click)="cancelCreateTemplate()"
+              >
+                ביטול
+              </button>
+              <button
+                type="submit"
+                class="primary-action"
+                [disabled]="!canCreateTemplate"
+              >
+                {{ createTemplateSubmitting ? 'יוצר תבנית...' : 'יצירת תבנית' }}
+              </button>
+            </footer>
+          </form>
+        </dialog>
+
+        <dialog
+          #templateEditDialog
+          class="template-edit-dialog centered-template-dialog"
+          aria-labelledby="template-edit-title"
+          (cancel)="handleTemplateEditCancel($event)"
+          (click)="handleTemplateEditDialogClick($event)"
+        >
+          <form class="template-edit-form" (ngSubmit)="saveTemplateMetadata()">
+            <header class="template-edit-heading">
+              <div>
+                <p class="eyebrow">עריכת פרטי תבנית</p>
+                <h2 id="template-edit-title">שם, תיאור ואירוע קליני</h2>
+              </div>
+              <button
+                type="button"
+                class="template-dialog-close"
+                aria-label="סגירת חלון העריכה"
+                [disabled]="templateMetadataSaving"
+                (click)="cancelTemplateMetadataEdit()"
+              >
+                ×
+              </button>
+            </header>
+
+            @if (templateMetadataLoading) {
+              <p class="template-edit-status" role="status">טוען את פרטי התבנית...</p>
+            } @else {
+              <div class="template-edit-fields">
+                <label>
+                  שם התבנית
+                  <input
+                    name="templateMetadataName"
+                    required
+                    autofocus
+                    [disabled]="templateMetadataSaving || !templateMetadataDetails"
+                    [(ngModel)]="templateMetadataName"
+                  />
+                </label>
+                <label>
+                  אירוע קליני מפעיל
+                  <select
+                    class="template-trigger-select"
+                    name="templateMetadataTriggerId"
+                    required
+                    [disabled]="
+                      templateMetadataSaving ||
+                      triggerCatalogLoading ||
+                      !templateMetadataDetails
+                    "
+                    [(ngModel)]="templateMetadataTriggerId"
+                  >
+                    <option [ngValue]="null" disabled hidden>
+                      {{ triggerCatalogLoading ? 'טוען אירועים קליניים...' : 'בחירת אירוע קליני' }}
+                    </option>
+                    @if (
+                      templateMetadataCurrentTrigger &&
+                      isCurrentTemplateTriggerMissingFromCatalog()
+                    ) {
+                      <option [ngValue]="templateMetadataCurrentTrigger.triggerId">
+                        {{
+                          templateMetadataCurrentTrigger.description ||
+                          templateMetadataCurrentTrigger.triggerName
+                        }}
+                      </option>
+                    }
+                    @for (trigger of triggerCatalog; track trigger.triggerId) {
+                      <option [ngValue]="trigger.triggerId">{{ trigger.description }}</option>
+                    }
+                  </select>
+                  @if (triggerCatalogError) {
+                    <small class="template-edit-error" role="alert">{{ triggerCatalogError }}</small>
+                  }
+                </label>
+                <label>
+                  תיאור
+                  <textarea
+                    name="templateMetadataDescription"
+                    rows="3"
+                    [disabled]="templateMetadataSaving || !templateMetadataDetails"
+                    [(ngModel)]="templateMetadataDescription"
+                  ></textarea>
+                </label>
+              </div>
+            }
+
+            @if (templateMetadataError) {
+              <p class="template-edit-error" role="alert">{{ templateMetadataError }}</p>
+            }
+
+            <footer class="template-edit-actions">
+              <button
+                type="button"
+                class="ghost-action"
+                [disabled]="templateMetadataSaving"
+                (click)="cancelTemplateMetadataEdit()"
+              >
+                ביטול
+              </button>
+              <button
+                type="submit"
+                class="primary-action"
+                [disabled]="!canSaveTemplateMetadata"
+              >
+                {{ templateMetadataSaving ? 'שומר...' : 'שמירת שינויים' }}
+              </button>
+            </footer>
+          </form>
+        </dialog>
+
+        <section class="screen template-workbench">
+          <aside class="panel template-library-panel">
+            <div class="template-library-head">
+              <div>
+                <p class="eyebrow">תבניות מסרון</p>
+                <h2>תבניות הודעות קליניות</h2>
+              </div>
+              <div class="template-library-actions">
+                <span class="template-count-pill">{{ filteredTemplates.length }} תבניות</span>
+                <button
+                  type="button"
+                  class="primary-action"
+                  [disabled]="createTemplateSubmitting"
+                  (click)="openNewTemplateDialog()"
+                >
+                  + תבנית חדשה
+                </button>
+              </div>
+            </div>
+
+            <label class="template-filter-field">
+              <span>חיפוש תבנית</span>
+              <input
+                type="search"
+                [(ngModel)]="templateFilter"
+                placeholder="חיפוש לפי שם או תיאור..."
+                autocomplete="off"
+              />
+            </label>
+
+            <div class="template-card-list" aria-label="רשימת תבניות הודעה">
+              @if (templatesLoading) {
+                <p class="inline-status">טוען תבניות מהשרת...</p>
+              } @else if (templatesError) {
+                <p class="inline-status create-template-error">{{ templatesError }}</p>
+              } @else {
+                @for (template of filteredTemplates; track template.id) {
+                  <article
+                    class="template-card"
+                    [class.active]="selectedTemplate?.id === template.id"
+                    [class.just-created]="newlyCreatedTemplateId === template.id"
+                  >
+                    <button
+                      type="button"
+                      class="template-card-select"
+                      (click)="selectTemplate(template.id)"
+                    >
+                      <span class="template-card-name-row">
+                        <strong>{{ template.name }}</strong>
+                        @if (newlyCreatedTemplateId === template.id) {
+                          <span class="template-new-badge">נוצרה עכשיו</span>
+                        }
+                      </span>
+                      <small>{{ template.description || 'ללא תיאור' }}</small>
+                      <em [class.inactive]="!template.isActive">
+                        {{ template.isActive ? 'פעילה' : 'כבויה' }}
+                      </em>
+                    </button>
+
+                    <div class="template-card-actions">
+                      <button
+                        type="button"
+                        class="icon-action card-action-icon"
+                        [attr.aria-label]="'עריכת פרטי התבנית ' + template.name"
+                        title="עריכת שם ותיאור"
+                        (click)="requestTemplateMetadataEdit(template)"
+                      >
+                        <svg class="edit-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M4 20h4l11-11-4-4L4 16v4Zm12.5-16.5 4 4 1-1a1.4 1.4 0 0 0 0-2l-2-2a1.4 1.4 0 0 0-2 0l-1 1Z" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-action card-action-icon card-delete-action"
+                        [attr.aria-label]="'מחיקת התבנית ' + template.name"
+                        title="מחיקת תבנית"
+                        (click)="requestTemplateDeletion(template)"
+                      >
+                        <svg class="trash-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path class="trash-lid" d="M9 3h6l1 2h4v2H4V5h4l1-2Z" />
+                          <path class="trash-bin" d="M6 9h12l-1 12H7L6 9Zm4 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="inline-status">
+                    {{ hasTemplateFilter ? 'לא נמצאו תבניות התואמות לחיפוש.' : 'לא נמצאו תבניות במערכת.' }}
+                  </p>
+                }
+              }
+            </div>
+          </aside>
+
+          <section class="panel template-editor-panel">
+            <div class="template-editor-head">
+              <div class="language-tabs template-language-tabs" role="tablist" aria-label="בחירת שפת תבנית">
+                @for (language of languageOptions; track language.code) {
+                  <button
+                    type="button"
+                    [class.active]="selectedLanguage === language.code"
+                    (click)="setLanguage(language.code)"
+                  >
+                    <span>{{ language.label }}</span>
+                    <small>{{ language.code.toUpperCase() }}</small>
+                  </button>
+                }
+              </div>
+
+              <div class="template-title-block">
+                @if (selectedTemplate; as template) {
+                  <h2>{{ template.name }}</h2>
+                  @if (messageStats(); as stats) {
+                    <div class="template-metadata-row" aria-label="פרטי התבנית">
+                      <span class="template-status" [class.inactive]="!template.isActive">
+                        {{ template.isActive ? 'פעילה' : 'כבויה' }}
+                      </span>
+                      <span>{{ languageLabel(selectedLanguage) }}</span>
+                      <span>{{ stats.length }} תווים</span>
+                      <span>{{ stats.segments }} מקטעי SMS</span>
+                    </div>
+                  }
+                } @else if (templatesLoading) {
+                  <h2>טוען תבנית...</h2>
+                } @else {
+                  <h2>אין תבנית להצגה</h2>
+                }
+              </div>
+            </div>
+
+            @if (templateDetailsLoading) {
+              <p class="inline-status">טוען את נוסח התבנית...</p>
+            } @else if (templateDetailsError) {
+              <p class="inline-status create-template-error">{{ templateDetailsError }}</p>
+            } @else if (selectedTemplateDetails && !hasCurrentTemplateText()) {
+              <p class="inline-status">
+                לא הוגדר נוסח בשפה: {{ languageLabel(selectedLanguage) }}.
+              </p>
+            }
+
+            @if (templateSaveError) {
+              <p class="inline-status create-template-error">{{ templateSaveError }}</p>
+            }
+
+            <label class="textarea-label template-textarea-wrap">
+              <span class="template-section-label">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 4h16v13H8l-4 3V4Zm3 4v2h10V8H7Zm0 4v2h7v-2H7Z" />
+                </svg>
+                נוסח ההודעה
+              </span>
+              <textarea
+                #templateTextArea
+                rows="7"
+                [attr.dir]="languageDirection(selectedLanguage)"
+                [disabled]="templateDetailsLoading || !selectedTemplateDetails"
+                [ngModel]="currentTemplateText()"
+                (ngModelChange)="setTemplateText($event)"
+                (blur)="rememberTemplateTextSelection($event)"
+              ></textarea>
+            </label>
+
+            <div class="template-actions">
+              <button
+                type="button"
+                class="primary-action save-action"
+                [disabled]="templateSaving || templateDeleting || !selectedTemplateDetails"
+                (click)="saveSelectedTemplate()"
+              >
+                {{ templateSaving ? 'שומר תבנית...' : 'שמירת תבנית' }}
+              </button>
+              <app-test-sms-panel
+                section="action"
+                [testPhones]="testPhones"
+                [phonesLoading]="testPhonesLoading"
+                [phonesError]="testPhonesError"
+                [selectedPhone]="testPhone"
+                [testStatus]="testStatus"
+                [statusTone]="testStatusTone"
+                [sending]="testSmsSending"
+                (testSmsRequested)="runTestSms()"
+              />
+            </div>
+
+            <app-test-sms-panel
+              section="status"
+              [testPhones]="testPhones"
+              [phonesLoading]="testPhonesLoading"
+              [phonesError]="testPhonesError"
+              [selectedPhone]="testPhone"
+              [testStatus]="testStatus"
+              [statusTone]="testStatusTone"
+              [sending]="testSmsSending"
+            />
+
+            @if (placeholdersLoading) {
+              <p class="inline-status">טוען שדות דינמיים מהשרת...</p>
+            } @else if (placeholdersError) {
+              <p class="inline-status create-template-error">{{ placeholdersError }}</p>
+            } @else {
+              <app-placeholder-picker
+                [placeholders]="placeholders"
+                [activePlaceholderCount]="activePlaceholderCount()"
+                (placeholderSelected)="insertPlaceholder($event.placeholderName)"
+              />
+            }
+          </section>
+
+          <aside class="template-preview-rail">
+            <div class="panel template-context-card">
+              <app-test-sms-panel
+                section="recipient"
+                [testPhones]="testPhones"
+                [phonesLoading]="testPhonesLoading"
+                [phonesError]="testPhonesError"
+                [selectedPhone]="testPhone"
+                [testStatus]="testStatus"
+                [statusTone]="testStatusTone"
+                [sending]="testSmsSending"
+                (testPhoneSelected)="selectTestPhone($event)"
+              />
+            </div>
+
+            <app-phone-preview
+              senderName="תצוגת תבנית"
+              [direction]="languageDirection(selectedLanguage)"
+              [renderedMessage]="currentTemplateText()"
+              [emptyMessage]="'לא הוגדר נוסח בשפה: ' + languageLabel(selectedLanguage)"
+              [messageStats]="messageStats()"
+            />
+          </aside>
+        </section>

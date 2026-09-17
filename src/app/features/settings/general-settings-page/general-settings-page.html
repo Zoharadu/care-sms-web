@@ -1,0 +1,191 @@
+<section class="unit-category-settings" dir="rtl" aria-labelledby="unit-category-title">
+  <header class="settings-heading">
+    <div>
+      <h2 id="unit-category-title">שיוך יחידות לקטגוריות</h2>
+      <p class="settings-description">הצגת שיוכי היחידות והקטגוריות משני הפרויקטים</p>
+    </div>
+
+    <div class="settings-heading-actions">
+      @if (!loading && !loadError) {
+        <label class="rules-search-field settings-search-field">
+          חיפוש
+          <input
+            type="search"
+            [ngModel]="tableFilter"
+            (ngModelChange)="updateTableFilter($event)"
+            placeholder="חיפוש לפי פרויקט, קטגוריה, בית חולים או יחידה..."
+          />
+        </label>
+      }
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="settings-state" role="status" aria-live="polite">
+      <span class="settings-spinner" aria-hidden="true"></span>
+      <strong>טוען שיוכי יחידות...</strong>
+    </div>
+  } @else if (loadError) {
+    <div class="settings-state settings-state-error" role="alert">
+      <strong>{{ loadError }}</strong>
+      <button type="button" class="retry-button" (click)="loadSettings()">נסו שוב</button>
+    </div>
+  } @else {
+    @if (hasCurrentContext) {
+      <div class="current-context-toolbar" aria-label="הקשר הפרויקט והקטגוריה הנוכחיים">
+        <div class="current-context-summary">
+          <strong class="current-context-label">הקשר נוכחי</strong>
+          <span class="current-context-value">
+            <span>פרויקט</span>
+            <strong class="current-context-project">{{ currentProjectName }}</strong>
+          </span>
+          <span class="current-context-value">
+            <span>קטגוריה</span>
+            <strong class="current-context-category">{{ currentCategoryName }}</strong>
+          </span>
+          <small class="current-context-count">
+            <strong>{{ currentContextRowCount }}</strong>
+            שיוכים
+          </small>
+        </div>
+
+        <label class="current-context-toggle">
+          <input
+            type="checkbox"
+            [ngModel]="showCurrentCategoryOnly"
+            (ngModelChange)="updateCurrentCategoryFilter($event)"
+          />
+          <span>הצג רק את הקטגוריה הנוכחית</span>
+        </label>
+      </div>
+    }
+
+    <div class="unit-category-table-wrap">
+      <table class="unit-category-table">
+        <colgroup>
+          <col class="association-id-column" />
+          <col class="project-column" />
+          <col class="category-column" />
+          <col class="hospital-column" />
+          <col class="unit-id-column" />
+          <col class="unit-column" />
+          <col class="status-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">מזהה שיוך</th>
+            <th scope="col">שם פרויקט</th>
+            <th scope="col">שם קטגוריה</th>
+            <th scope="col">שם בית חולים</th>
+            <th scope="col" class="unit-id-heading">מזהה יחידה</th>
+            <th scope="col">שם יחידה</th>
+            <th scope="col">סטטוס</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of paginatedRows; track row.ucId) {
+            <tr [class.current-context-row]="isCurrentContextRow(row)">
+              <td class="numeric-cell">{{ row.ucId }}</td>
+              <td>{{ row.projectName || 'לא נמצא' }}</td>
+              <td>
+                <span>{{ row.categoryName || 'לא נמצאה' }}</span>
+                @if (isCurrentContextRow(row)) {
+                  <span class="current-context-badge">קטגוריה נוכחית</span>
+                }
+              </td>
+              <td>{{ row.hospitalName || 'לא נמצא' }}</td>
+              <td class="numeric-cell unit-id-cell">{{ row.unitId ?? '' }}</td>
+              <td>{{ row.unitName || 'לא נמצאה' }}</td>
+              <td class="status-cell">
+                <button
+                  type="button"
+                  class="status-button"
+                  [class.inactive]="!row.isActive"
+                  [disabled]="updatingIds.has(row.ucId)"
+                  [attr.aria-label]="
+                    (row.isActive ? 'ביטול' : 'הפעלת') + ' שיוך ' + row.ucId
+                  "
+                  [attr.aria-pressed]="row.isActive"
+                  (click)="toggleActive(row)"
+                >
+                  @if (updatingIds.has(row.ucId)) {
+                    שומר...
+                  } @else {
+                    <span class="status-dot" aria-hidden="true"></span>
+                    {{ row.isActive ? 'פעיל' : 'לא פעיל' }}
+                  }
+                </button>
+                @if (updateErrors.get(row.ucId); as updateError) {
+                  <small class="update-error" role="alert">{{ updateError }}</small>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="empty-table" colspan="7">
+                @if (showCurrentCategoryOnly) {
+                  לא נמצאו שיוכים לקטגוריה הנוכחית.
+                } @else if (tableFilter.trim()) {
+                  לא נמצאו תוצאות התואמות לחיפוש.
+                } @else {
+                  לא נמצאו שיוכי יחידות בפרויקט זה.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (filteredRows.length > 0) {
+      <nav class="table-pagination" aria-label="ניווט בין עמודי טבלת השיוכים">
+        <div class="pagination-summary">
+          <label>
+            שורות בעמוד
+            <select
+              [ngModel]="pageSize"
+              (ngModelChange)="updatePageSize($event)"
+              aria-label="מספר שורות בעמוד"
+            >
+              @for (option of pageSizeOptions; track option) {
+                <option [ngValue]="option">{{ option }}</option>
+              }
+            </select>
+          </label>
+          <span>{{ firstVisibleRow }}–{{ lastVisibleRow }} מתוך {{ filteredRows.length }}</span>
+        </div>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)"
+          >
+            הקודם
+          </button>
+
+          @for (page of visiblePageNumbers; track page) {
+            <button
+              type="button"
+              class="pagination-page"
+              [class.active]="page === currentPage"
+              [attr.aria-current]="page === currentPage ? 'page' : null"
+              [attr.aria-label]="'עמוד ' + page"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          }
+
+          <button
+            type="button"
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)"
+          >
+            הבא
+          </button>
+        </div>
+      </nav>
+    }
+  }
+</section>

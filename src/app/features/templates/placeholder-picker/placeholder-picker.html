@@ -1,0 +1,38 @@
+<div class="template-placeholder-title">
+  <span>שדות זמינים מקטלוג הפרמטרים</span>
+  <small>{{ activePlaceholderCount }} פעילים</small>
+</div>
+
+<div class="placeholder-grid template-placeholder-grid">
+  @for (placeholder of placeholders; track placeholder.placeholderName) {
+    <button
+      type="button"
+      class="placeholder-chip"
+      [attr.aria-label]="placeholder.placeholderName"
+      [attr.aria-describedby]="
+        activeTooltip?.placeholderId === placeholder.placeholderId
+          ? 'active-placeholder-description'
+          : null
+      "
+      (mouseenter)="showPlaceholderTooltip($event, placeholder)"
+      (mouseleave)="hidePlaceholderTooltip()"
+      (focus)="showPlaceholderTooltip($event, placeholder)"
+      (blur)="hidePlaceholderTooltip()"
+      (click)="placeholderSelected.emit(placeholder)"
+    >
+      <span>{{ placeholder.placeholderName }}</span>
+    </button>
+  }
+</div>
+
+@if (activeTooltip; as tooltip) {
+  <div
+    id="active-placeholder-description"
+    class="placeholder-floating-tooltip"
+    role="tooltip"
+    [style.left.px]="tooltip.left"
+    [style.top.px]="tooltip.top"
+  >
+    {{ tooltip.text }}
+  </div>
+}

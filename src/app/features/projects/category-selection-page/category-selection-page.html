@@ -1,0 +1,64 @@
+<div class="project-selection-page" dir="rtl">
+  <header class="project-header">
+    <div class="project-brand logo">
+      <img src="care-sms-logo.png" alt="CareSMS" />
+      <span>מערכת מסרונים</span>
+    </div>
+    <div class="user-greeting user-name">
+      שלום ל{{ userName }}
+    </div>
+    <button type="button" class="back-to-projects" (click)="backToProjects()">
+      <span aria-hidden="true">→</span>
+      חזרה לפרויקטים
+    </button>
+  </header>
+
+  <main class="project-selection-content">
+    <section class="project-intro" aria-labelledby="category-page-title">
+      <span class="project-eyebrow">בחירת קטגוריה</span>
+      <h1 id="category-page-title">{{ projectName || 'קטגוריות הפרויקט' }}</h1>
+      <p>בחרו קטגוריה להמשך לניהול המערכת</p>
+    </section>
+
+    @if (categoriesLoading) {
+    <div class="project-status" role="status" aria-live="polite">
+      <span class="project-spinner" aria-hidden="true"></span>
+      <strong>טוען קטגוריות...</strong>
+    </div>
+    } @else if (categoriesError) {
+    <div class="project-status project-status-error" role="alert">
+      <strong>{{ categoriesError }}</strong>
+      <button type="button" (click)="loadCategories()">נסו שוב</button>
+    </div>
+    } @else {
+    <section class="projects-section" aria-label="בחירת קטגוריה">
+      <header class="projects-heading">
+        <h2>הקטגוריות בפרויקט</h2>
+        <span>{{ categories.length }} קטגוריות</span>
+      </header>
+
+      <div class="project-grid">
+        @for (category of categories; track category.categoryId; let index = $index) {
+        <button type="button" class="project-card" [class.project-card-green]="index % 2 === 1"
+          [attr.aria-label]="'בחירת קטגוריה ' + category.categoryName" (click)="openCategory(category)">
+          <div class="project-card-meta">
+            <span class="active-project-label">
+              {{ category.isActive ? 'פעילה' : 'לא פעילה' }}
+            </span>
+          </div>
+          <h3>{{ category.categoryName }}</h3>
+          <span class="enter-project-button">
+            <span>פתיחת הקטגוריה</span>
+            <span aria-hidden="true">←</span>
+          </span>
+        </button>
+        } @empty {
+        <div class="project-status" role="status">
+          <strong>לא נמצאו קטגוריות המשויכות לפרויקט.</strong>
+        </div>
+        }
+      </div>
+    </section>
+    }
+  </main>
+</div>

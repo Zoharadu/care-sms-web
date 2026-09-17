@@ -1,0 +1,59 @@
+.authentication-error {
+  align-items: center;
+  background: #fff4e5;
+  border-bottom: 1px solid #f0b45a;
+  color: #6d3d00;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+}
+
+.authentication-error button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 1.2rem;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 2rem;
+}
+
+.authentication-error button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.context-breadcrumbs {
+  align-items: center;
+  color: rgba(255, 255, 255, 0.78);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.76rem;
+  font-weight: 700;
+  gap: 0.45rem;
+  line-height: 1.25;
+  margin-bottom: 3px;
+}
+
+.context-breadcrumbs a {
+  color: white;
+  text-decoration: none;
+}
+
+.context-breadcrumbs a:hover,
+.context-breadcrumbs a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.context-breadcrumbs strong {
+  color: white;
+  font-weight: 900;
+}

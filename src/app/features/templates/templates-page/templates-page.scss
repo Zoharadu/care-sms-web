@@ -1,0 +1,226 @@
+@use '../../../../styles/mixins' as shared;
+
+.create-placeholder-language-tabs {
+  margin: 0;
+}
+
+.template-delete-dialog::backdrop,
+.template-edit-dialog::backdrop {
+  background: rgb(15 23 42 / 58%);
+  backdrop-filter: blur(3px);
+}
+
+.template-delete-dialog,
+.template-edit-dialog {
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--slate-300);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgb(15 23 42 / 32%);
+  color: var(--slate-800);
+}
+
+.template-delete-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(460px, calc(100vw - 48px));
+  border-color: var(--danger-border);
+}
+
+.template-delete-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin: 28px auto 14px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 26px;
+}
+
+.template-delete-content {
+  padding: 0 30px 24px;
+  text-align: center;
+}
+
+.template-delete-content h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+}
+
+.template-delete-content p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.template-delete-warning {
+  margin-top: 10px !important;
+  color: var(--slate-500);
+  font-size: 14px;
+}
+
+.template-delete-error,
+.template-edit-error {
+  @include shared.feedback-surface(var(--danger-border), var(--red-soft), var(--red));
+}
+
+.template-delete-error {
+  margin-top: 14px !important;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  font-weight: 700;
+}
+
+.template-delete-actions,
+.template-edit-actions {
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid var(--slate-200);
+  background: var(--slate-50);
+}
+
+.template-delete-actions button,
+.template-edit-actions button {
+  min-width: 120px;
+  min-height: 44px;
+  border-radius: var(--radius-control);
+}
+
+.template-delete-actions {
+  justify-content: center;
+  padding: 18px 24px;
+}
+
+.template-delete-actions button {
+  font-weight: 800;
+}
+
+.confirm-delete-action {
+  border: 1px solid var(--danger-action);
+  background: var(--danger-action);
+  color: var(--surface);
+}
+
+.confirm-delete-action:hover:not(:disabled) {
+  border-color: var(--red);
+  background: var(--red);
+}
+
+.confirm-delete-action:disabled,
+.template-delete-actions .ghost-action:disabled,
+.template-edit-actions button:disabled,
+.template-dialog-close:disabled {
+  @include shared.disabled-state;
+}
+
+.template-card {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.template-card-select {
+  display: grid;
+  width: 100%;
+  min-height: 78px;
+  padding: 12px 12px 40px;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: start;
+}
+
+.template-card-select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.template-card-actions {
+  position: absolute;
+  inset-block-end: 8px;
+  inset-inline-end: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.template-edit-dialog {
+  width: min(520px, calc(100vw - 48px));
+}
+
+.template-edit-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid var(--slate-200);
+}
+
+.template-edit-heading .eyebrow {
+  margin: 0 0 4px;
+}
+
+.template-edit-heading h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.template-dialog-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--slate-100);
+  color: var(--slate-600);
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.template-dialog-close:hover:not(:disabled) {
+  background: var(--slate-200);
+  color: var(--slate-900);
+}
+
+.template-edit-fields {
+  display: grid;
+  gap: 16px;
+  padding: 24px 28px;
+}
+
+.template-edit-fields label {
+  display: grid;
+  gap: 8px;
+  color: var(--slate-700);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.template-trigger-select {
+  block-size: 44px;
+}
+
+.template-edit-status,
+.template-edit-error {
+  margin: 24px 28px;
+  padding: 12px 14px;
+  border-radius: var(--radius-control);
+  font-weight: 700;
+}
+
+.template-edit-status {
+  background: var(--slate-100);
+  color: var(--slate-600);
+}
+
+.template-edit-actions {
+  justify-content: flex-end;
+  padding: 18px 28px;
+}

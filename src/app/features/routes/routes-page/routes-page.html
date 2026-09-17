@@ -1,0 +1,810 @@
+            @if (toastMessage) {
+              <div
+                class="template-toast"
+                [attr.role]="toastTone === 'error' ? 'alert' : 'status'"
+                [attr.aria-live]="toastTone === 'error' ? 'assertive' : 'polite'"
+                [style.background]="toastTone === 'error' ? 'var(--red-soft)' : null"
+                [style.border-color]="toastTone === 'error' ? 'var(--danger-border)' : null"
+                [style.color]="toastTone === 'error' ? 'var(--red)' : null"
+              >
+                @if (toastTone === 'success') {
+                  <span class="template-toast-icon" aria-hidden="true">✓</span>
+                }
+                <span>{{ toastMessage }}</span>
+                <button type="button" aria-label="סגירת ההודעה" (click)="dismissToast()">×</button>
+              </div>
+            }
+
+            <section class="screen rules-screen">
+              <header class="rules-page-heading">
+                <div>
+                  <p class="eyebrow">כללי שיחה</p>
+                  <h2>ניהול כללי שיחה קליניים</h2>
+                  <p>הגדרת טריגרים, תזמון, מחלקות ותבניות הודעה.</p>
+                </div>
+                <span class="rules-count-pill">{{ rules.length }} כללים</span>
+              </header>
+
+              <div class="panel rules-control-bar">
+                <button type="button" class="primary-action create-rule-action" (click)="createDraftRule()">
+                  <span>+</span>
+                  יצירת כלל שליחה חדש
+                </button>
+                <div class="rules-audience-selector" aria-label="קהל יעד משותף לכללי השליחה">
+                  <label class="audience-hospital-field">
+                    בית חולים לשליחה
+                    <select
+                      [ngModel]="selectedAudienceHospitalId"
+                      (ngModelChange)="setSelectedAudienceHospital($event)"
+                      [disabled]="hospitalsLoading"
+                      [attr.aria-busy]="hospitalsLoading"
+                    >
+                      <option value="">
+                        {{ hospitalsLoading ? 'טוען בתי חולים...' : 'בחר בית חולים' }}
+                      </option>
+                      @for (hospital of hospitals; track hospital.id) {
+                        <option [value]="hospital.id">
+                          {{ audienceHospitalOptionLabel(hospital) }}
+                        </option>
+                      }
+                    </select>
+                  </label>
+
+                  <div class="audience-units-field">
+                    <span>מחלקות / יחידות לשליחה</span>
+                    <details
+                      #audienceUnitsDropdown
+                      class="anchor-template-dropdown hospital-units-dropdown audience-units-dropdown"
+                      [class.is-disabled]="!selectedAudienceHospitalId || audienceUnitsLoading || audienceUnits.length === 0"
+                    >
+                      <summary
+                        [attr.aria-disabled]="!selectedAudienceHospitalId || audienceUnitsLoading || audienceUnits.length === 0"
+                        [attr.aria-busy]="audienceUnitsLoading"
+                      >
+                        <span>{{ audienceUnitSelectionLabel() }}</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m7 10 5 5 5-5" />
+                        </svg>
+                      </summary>
+                      <div class="anchor-template-options hospital-unit-options">
+                        @for (unit of audienceUnits; track unit.unitId) {
+                          <label class="hospital-unit-option">
+                            <input
+                              type="checkbox"
+                              [checked]="isAudienceUnitSelected(unit.unitId)"
+                              [disabled]="isAudienceUnitSaving(unit) || !unit.smsUnitId"
+                              (change)="setAudienceUnitSelected(unit.unitId, $any($event.target).checked)"
+                            />
+                            <span class="hospital-unit-option-text">
+                              <span>{{ unit.unitName }}</span>
+                              <small>{{ unit.unitId }}</small>
+                            </span>
+                          </label>
+                        }
+                      </div>
+                    </details>
+                  </div>
+
+                  <div class="audience-selection-status" [class.error]="audienceError">
+                    @if (audienceError) {
+                      <span role="alert">{{ audienceError }}</span>
+                    } @else {
+                      <span>{{ audienceScopeStatusLabel() }}</span>
+                    }
+                  </div>
+                </div>
+                <span class="rules-control-divider" aria-hidden="true"></span>
+                <div class="rules-category-filter" aria-label="סינון קטגוריה">
+                  <span>סינון קטגוריה:</span>
+                  <button
+                    type="button"
+                    class="category-pill"
+                    [class.active]="categoryFilter === 'all'"
+                    (click)="setCategoryFilter('all')"
+                  >
+                    הכל
+                  </button>
+                  @for (category of categories; track category.categoryId) {
+                    <button
+                      type="button"
+                      class="category-pill"
+                      [class.active]="categoryFilter === category.categoryId.toString()"
+                      (click)="setCategoryFilter(category.categoryId)"
+                    >
+                      {{ category.categoryName }}
+                    </button>
+                  }
+                </div>
+                <label class="rules-search-field">
+                  חיפוש
+                  <input type="search" [ngModel]="ruleSearch" (ngModelChange)="updateRuleSearch($event)" placeholder="חיפוש חוק, תבנית, אירוע או מחלקה..." />
+                </label>
+              </div>
+              <div class="rules-list-heading">
+                <span>מציג {{ routeCards.length }} מתוך {{ rules.length }} חוקי משלוח</span>
+              </div>
+              @if (rulesDataLoading) {
+                <div class="panel empty-rules-state" role="status">
+                  <strong>טוען כללי שליחה מהשרת...</strong>
+                </div>
+              }
+              @if (rulesDataError) {
+                <div class="panel empty-rules-state" role="alert">
+                  <strong>{{ rulesDataError }}</strong>
+                </div>
+              }
+              <div class="rules-card-list">
+                @for (card of routeCards; track card.rule.id) {
+                  @let rule = card.rule;
+                  <article class="shipment-rule-card" [class.is-disabled]="!rule.template.isActive">
+                    <div class="shipment-rule-top">
+                      <div class="shipment-rule-title">
+                        <span class="shipment-rule-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24">
+                            <path d="M4 4h16v13H8l-4 3V4Zm3 4v2h10V8H7Zm0 4v2h7v-2H7Z" />
+                          </svg>
+                        </span>
+                        <div>
+                          <div class="rule-badges">
+                            <span class="rule-active-badge" [class.off]="!rule.template.isActive">
+                              {{ rule.template.isActive ? 'פעיל' : 'לא פעיל' }}
+                            </span>
+                          </div>
+                          <h2>{{ rule.template.templateName }}</h2>
+                          <p>{{ card.description }}</p>
+                        </div>
+                      </div>
+                      <div class="shipment-rule-actions">
+                        <button
+                          type="button"
+                          class="rule-switch"
+                          [class.on]="rule.template.isActive"
+                          [attr.aria-pressed]="rule.template.isActive"
+                          [attr.aria-label]="rule.template.isActive ? 'כבה חוק' : 'הפעל חוק'"
+                          [attr.title]="rule.template.isActive ? 'פעיל' : 'לא פעיל'"
+                          [disabled]="isRuleActiveUpdating(rule) || !selectedApiTemplateId(rule)"
+                          (click)="setRuleActive(rule, !rule.template.isActive)"
+                        >
+                          <span></span>
+                        </button>
+                        @if (isRuleActiveUpdating(rule)) {
+                          <small class="rule-status-feedback" role="status">שומר...</small>
+                        }
+                        <button
+                          type="button"
+                          class="icon-action card-action-icon"
+                          aria-label="עריכת חוק"
+                          title="עריכת חוק"
+                          (click)="openRule(rule.id)"
+                        >
+                          <svg class="edit-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 20h4l11-11-4-4L4 16v4Zm12.5-16.5 4 4 1-1a1.4 1.4 0 0 0 0-2l-2-2a1.4 1.4 0 0 0-2 0l-1 1Z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    @if (ruleActiveUpdateError(rule); as statusError) {
+                      <p class="rule-status-error" role="alert">{{ statusError }}</p>
+                    }
+                    <div class="shipment-rule-meta">
+                      <div class="rule-meta-item">
+                        <small>טריגר מפעיל (TRIGGER)</small>
+                        <div class="rule-meta-value">
+                          <strong>{{ card.triggerLabel }}</strong>
+                          <span aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M13 2 5 14h6l-1 8 8-12h-6l1-8Z" /></svg>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="rule-meta-item">
+                        <small>תזמון / מחזוריות (SCHEDULE)</small>
+                        <div class="rule-meta-value">
+                          <strong>{{ card.scheduleLabel }}</strong>
+                          <span aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm1 4v4.6l3.2 1.9-1 1.7-4.2-2.5V7h2Z" /></svg>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="rule-meta-item">
+                        <small>קהל יעד לשליחה (TARGET)</small>
+                        <div class="rule-meta-value">
+                          <strong>{{ card.audienceLabel }}</strong>
+                          <span aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16h-6v-5h-4v5H4Zm4-13h2V6H8v2Zm6 0h2V6h-2v2Zm-6 4h2v-2H8v2Zm6 0h2v-2h-2v2Z" /></svg>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="rule-meta-item">
+                        <small>החרגות מחלקתיות (DEPT)</small>
+                        <div class="rule-meta-value">
+                          <strong>{{ card.departmentLabel }}</strong>
+                          <span aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16h-6v-5h-4v5H4Zm4-13h2V6H8v2Zm6 0h2V6h-2v2Zm-6 4h2v-2H8v2Zm6 0h2v-2h-2v2Z" /></svg>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="rule-meta-item">
+                        <small>תבנית הודעה (TEMPLATE)</small>
+                        <div class="rule-meta-value">
+                          <strong>{{ rule.template.templateName }}</strong>
+                          <span aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 4h16v13H8l-4 3V4Zm3 4v2h10V8H7Zm0 4v2h7v-2H7Z" /></svg>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                } @empty {
+                  @if (!rulesDataLoading && !rulesDataError) {
+                    <div class="panel empty-rules-state">
+                      <strong>לא נמצאו חוקי משלוח בשרת</strong>
+                      <span>אין כרגע הגדרות תבנית וטריגר להצגה.</span>
+                    </div>
+                  }
+                }
+              </div>
+            </section>
+
+  @if (drawerOpen) {
+    <button type="button" class="drawer-backdrop" aria-label="סגור עריכה" (click)="closeDrawer()"></button>
+  }
+
+  <aside
+    class="rule-drawer"
+    [class.is-open]="drawerOpen"
+    role="dialog"
+    [attr.aria-modal]="drawerOpen ? 'true' : null"
+    aria-labelledby="rule-dialog-title"
+    [attr.aria-hidden]="drawerOpen ? null : 'true'"
+    [attr.inert]="drawerOpen ? null : ''"
+  >
+    @if (selectedRule; as rule) {
+      <div class="drawer-header">
+        <div>
+          <h2 id="rule-dialog-title">{{ rule.template.templateName }}</h2>
+          <small>2 רשומות קבועות + 6 חוקי משלוח ניתנים להגדרה</small>
+        </div>
+        <button type="button" class="icon-action" (click)="closeDrawer()">סגור</button>
+      </div>
+
+      <div class="drawer-content">
+        <section class="constant-section">
+          <div class="constant-heading">
+            <span class="constant-icon">01</span>
+            <div>
+              <h3>מאפייני חוק כלליים</h3>
+            </div>
+          </div>
+          <div class="form-grid compact">
+            @if (isCreatingRule) {
+              <label class="route-template-field">
+                שם תבנית
+                <select
+                  [ngModel]="selectedApiTemplateId(rule)"
+                  (ngModelChange)="setRuleTemplate(rule, $event)"
+                  [disabled]="templatesLoading"
+                >
+                  <option value="" disabled>
+                    {{ templatesLoading ? 'טוען תבניות...' : 'בחירת תבנית' }}
+                  </option>
+                  @for (template of templates; track template.id) {
+                    <option [value]="template.id">
+                      {{ template.name }}
+                    </option>
+                  }
+                </select>
+                @if (templatesError) {
+                  <small class="route-field-hint error" role="alert">{{ templatesError }}</small>
+                }
+              </label>
+            } @else {
+              <div class="route-readonly-field">
+                <span>שם תבנית</span>
+                <strong class="route-readonly-value">
+                  {{ selectedTemplateName(rule) }}
+                </strong>
+                @if (templatesError) {
+                  <small class="route-field-hint error" role="alert">{{ templatesError }}</small>
+                }
+              </div>
+            }
+            <div class="route-readonly-field">
+              <span>קטגוריה</span>
+              <strong class="route-readonly-value">{{ selectedTemplateCategoryName(rule) }}</strong>
+              @if (categoriesError) {
+                <small class="route-field-hint error" role="alert">{{ categoriesError }}</small>
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="constant-section">
+          <div class="constant-heading">
+            <span class="constant-icon">02</span>
+            <div>
+              <h3>אירוע קליני מפעיל</h3>
+              @if (clinicalTriggerLoading) {
+                <p class="route-field-hint" role="status">טוען את האירוע המשויך לתבנית...</p>
+              } @else if (clinicalTriggerError) {
+                <p class="route-field-hint error" role="alert">{{ clinicalTriggerError }}</p>
+              } @else if (!ruleTemplateId(rule)) {
+                <p class="route-field-hint">יש לבחור תבנית כדי להציג את האירוע המפעיל שלה.</p>
+              } @else if (selectedTemplateClinicalTriggers.length > 0) {
+                <div class="clinical-trigger-list">
+                  @for (clinicalTrigger of selectedTemplateClinicalTriggers; track clinicalTrigger.triggerId) {
+                    <p class="clinical-trigger-name">{{ clinicalTrigger.triggerName }}</p>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </section>
+
+        <div class="configurable-divider">
+          <span>6 חוקים ניתנים להגדרה</span>
+        </div>
+
+        <section
+          class="configurable-section rule-card rule-enable-card"
+          [attr.aria-busy]="isRuleActiveUpdating(rule)"
+        >
+          <div class="rule-card-head">
+            <div class="rule-title">
+              <h3>1. פעיל</h3>
+            </div>
+            <label
+              class="large-check"
+              [attr.aria-label]="rule.template.isActive ? 'התבנית פעילה' : 'התבנית לא פעילה'"
+            >
+              <input
+                type="checkbox"
+                [checked]="rule.template.isActive"
+                [disabled]="isRuleActiveUpdating(rule) || !selectedApiTemplateId(rule)"
+                (change)="setRuleActive(rule, $any($event.target).checked)"
+              />
+              <span></span>
+            </label>
+          </div>
+          @if (ruleActiveUpdateError(rule)) {
+            <p class="route-field-hint error" role="alert">{{ ruleActiveUpdateError(rule) }}</p>
+          }
+        </section>
+
+        <section class="configurable-section rule-card">
+          <div class="rule-card-head stacked">
+            <div class="rule-title">
+              <h3>2. החרגת מחלקות</h3>
+            </div>
+            <button
+              type="button"
+              class="rule-expand-toggle"
+              [class.is-open]="isHospitalFilterOpen(rule)"
+              [attr.aria-expanded]="isHospitalFilterOpen(rule)"
+              [attr.aria-controls]="'hospital-filter-fields-' + rule.id"
+              [attr.aria-label]="isHospitalFilterOpen(rule) ? 'סגירת סינון למחלקות' : 'פתיחת סינון למחלקות'"
+              (click)="toggleHospitalFilter(rule)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+          </div>
+          @if (isHospitalFilterOpen(rule)) {
+            <div class="rule-clear-toolbar with-description">
+              <p class="collapsible-rule-description">
+                מוצגים רק בתי החולים והמחלקות שנבחרו בקהל היעד העליון. ניתן להחריג בית חולים שלם או מחלקות מסוימות עבור הכלל הנוכחי בלבד.
+              </p>
+              <button
+                type="button"
+                class="rule-clear-action"
+                title="ניקוי כלל 2"
+                aria-label="ניקוי כלל 2"
+                [disabled]="ruleSaveLoading"
+                (click)="clearHospitalExclusions(rule)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5" />
+                </svg>
+                <span>ניקוי הכלל</span>
+              </button>
+            </div>
+            <div [id]="'hospital-filter-fields-' + rule.id" class="hospital-exclusion-groups">
+              @for (group of hospitalExclusionGroups; track group.id) {
+                <div class="hospital-exclusion-row">
+                  <div class="audience-hospital-readonly">
+                    <span>בית חולים בקהל היעד</span>
+                    <strong>{{ hospitalName(group.hospitalId) }}</strong>
+                  </div>
+
+                  <div class="hospital-units-field">
+                    <span class="hospital-units-label">מחלקות שנבחרו בקהל היעד</span>
+                    <details
+                      class="anchor-template-dropdown hospital-units-dropdown"
+                      [class.is-disabled]="!group.hospitalId || group.loading || group.units.length === 0"
+                    >
+                      <summary
+                        [attr.aria-disabled]="!group.hospitalId || group.loading || group.units.length === 0"
+                        [attr.aria-busy]="group.loading"
+                      >
+                        <span>{{ hospitalUnitSelectionLabel(group) }}</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m7 10 5 5 5-5" />
+                        </svg>
+                      </summary>
+                      <div class="anchor-template-options hospital-unit-options">
+                        @for (unit of group.units; track unit.unitId) {
+                          <label class="hospital-unit-option">
+                            <input
+                              type="checkbox"
+                              [checked]="isHospitalUnitExcluded(group, unit.unitId)"
+                              (change)="setHospitalUnitExcluded(rule, group, unit.unitId, $any($event.target).checked)"
+                            />
+                            <span class="hospital-unit-option-text">
+                              <span>{{ unit.unitName }}</span>
+                              <small>{{ unit.unitId }}</small>
+                            </span>
+                          </label>
+                        }
+                      </div>
+                    </details>
+                    @if (group.error) {
+                      <span class="route-field-hint error" role="alert">{{ group.error }}</span>
+                    }
+                  </div>
+
+                  <div class="hospital-exclude-all-field">
+                    <span>החרגת בית חולים</span>
+                    <label
+                      class="hospital-exclude-all-option"
+                      [class.selected]="isHospitalFullyExcluded(group)"
+                    >
+                      <input
+                        type="checkbox"
+                        [checked]="isHospitalFullyExcluded(group)"
+                        [indeterminate]="isHospitalPartiallyExcluded(group)"
+                        [disabled]="group.loading || group.units.length === 0"
+                        (change)="setHospitalExcluded(rule, group, $any($event.target).checked)"
+                      />
+                      <span>{{ isHospitalFullyExcluded(group) ? 'בית החולים מוחרג' : 'החרגת כל בית החולים' }}</span>
+                    </label>
+                  </div>
+                </div>
+              } @empty {
+                <p class="audience-exclusion-empty">
+                  יש לבחור תחילה בית חולים ומחלקות בקהל היעד שמעל רשימת הכללים.
+                </p>
+              }
+            </div>
+          }
+        </section>
+
+        <section class="configurable-section rule-card">
+          <div class="rule-card-head">
+            <div class="rule-title">
+              <h3>3. חלון תקוף מקסימלי מהטריגר קליני</h3>
+            </div>
+            <button
+              type="button"
+              class="rule-expand-toggle"
+              [class.is-open]="isValiditySectionOpen(rule)"
+              [attr.aria-expanded]="isValiditySectionOpen(rule)"
+              [attr.aria-controls]="'validity-window-fields-' + rule.id"
+              [attr.aria-label]="isValiditySectionOpen(rule) ? 'סגירת חלון תוקף' : 'פתיחת חלון תוקף'"
+              (click)="toggleValiditySection(rule)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+          </div>
+          @if (isValiditySectionOpen(rule)) {
+            <div class="rule-clear-toolbar">
+              <button
+                type="button"
+                class="rule-clear-action"
+                title="ניקוי כלל 3"
+                aria-label="ניקוי כלל 3"
+                [disabled]="ruleSaveLoading"
+                (click)="clearValidityRule(rule)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5" />
+                </svg>
+                <span>ניקוי הכלל</span>
+              </button>
+            </div>
+            <div [id]="'validity-window-fields-' + rule.id" class="dependency-fields">
+              <label class="validity-minutes-field">
+                דקות תוקף
+                <input
+                  type="number"
+                  [min]="minValidityMinutes"
+                  [max]="maxValidityMinutes"
+                  step="1"
+                  required
+                  [ngModel]="rule.step.dependencyLimitMinutes"
+                  (ngModelChange)="setValidityMinutes(rule, $event)"
+                />
+                <small class="route-field-hint">בין 1 ל־60 דקות</small>
+              </label>
+            </div>
+          }
+        </section>
+
+        <section class="configurable-section rule-card">
+          <div class="rule-card-head">
+            <div class="rule-title">
+              <h3>4. תלות במשלוח הודעה קודמת</h3>
+            </div>
+            <button
+              type="button"
+              class="rule-expand-toggle"
+              [class.is-open]="isRelativeDelayOpen(rule)"
+              [attr.aria-expanded]="isRelativeDelayOpen(rule)"
+              [attr.aria-controls]="'relative-delay-fields-' + rule.id"
+              [attr.aria-label]="isRelativeDelayOpen(rule) ? 'סגירת כלל השהייה יחסית' : 'פתיחת כלל השהייה יחסית'"
+              (click)="toggleRelativeDelay(rule)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+          </div>
+          @if (isRelativeDelayOpen(rule)) {
+            <div class="rule-clear-toolbar">
+              <button
+                type="button"
+                class="rule-clear-action"
+                title="ניקוי כלל 4"
+                aria-label="ניקוי כלל 4"
+                [disabled]="ruleSaveLoading"
+                (click)="clearRelativeDelayRule(rule)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5" />
+                </svg>
+                <span>ניקוי הכלל</span>
+              </button>
+            </div>
+            <div [id]="'relative-delay-fields-' + rule.id">
+              <div class="full-field anchor-field">
+                <span class="anchor-field-label">במי אני תלוי (חובה)</span>
+                <details
+                  #anchorDropdown
+                  class="anchor-template-dropdown"
+                  [class.is-disabled]="templatesLoading"
+                >
+                  <summary [attr.aria-disabled]="templatesLoading">
+                    <span>{{ templatesLoading ? 'טוען תבניות...' : relativeAnchorTemplateName(rule) }}</span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m7 10 5 5 5-5" />
+                    </svg>
+                  </summary>
+                  <div class="anchor-template-options">
+                    <button
+                      type="button"
+                      [class.selected]="!rule.step.delayFromStepId"
+                      (click)="setRelativeAnchorTemplate(rule, '', anchorDropdown)"
+                    >
+                      בחר תבנית שעליה הכלל תלוי
+                    </button>
+                    @for (template of relativeAnchorTemplates(rule); track template.id) {
+                      <button
+                        type="button"
+                        class="relative-anchor-template-option"
+                        [class.selected]="rule.step.delayFromStepId === relativeAnchorTemplateTriggerId(template)"
+                        (click)="setRelativeAnchorTemplate(rule, relativeAnchorTemplateTriggerId(template), anchorDropdown)"
+                      >
+                        {{ template.name }}
+                      </button>
+                    }
+                  </div>
+                </details>
+                @if (templatesError) {
+                  <small class="route-field-hint error" role="alert">{{ templatesError }}</small>
+                }
+              </div>
+              <div class="dependency-fields">
+                <label class="relative-delay-field">
+                 השהיה בדקות ממשלוח תבנית קודמת (חובה)
+                  <input
+                    type="number"
+                    min="0"
+                    [max]="maxRelativeDelayMinutes"
+                    required
+                    [ngModel]="rule.step.delayFromStepMinutes"
+                    (ngModelChange)="setRelativeDelayMinutes(rule, $event)"
+                  />
+                  <small class="route-field-hint">בין 0 ל־60 דקות</small>
+                </label>
+              </div>
+            </div>
+          }
+        </section>
+
+        <section class="configurable-section rule-card compact-rule-card">
+          <div class="rule-card-head">
+            <div class="rule-title">
+              <h3>5. משלוח מחזורי ואינטראקטיבי</h3>
+            </div>
+            <button
+              type="button"
+              class="rule-expand-toggle"
+              [class.is-open]="isRecurringSectionOpen(rule)"
+              [attr.aria-expanded]="isRecurringSectionOpen(rule)"
+              [attr.aria-controls]="'recurring-settings-' + rule.id"
+              [attr.aria-label]="isRecurringSectionOpen(rule) ? 'סגירת כלל משלוח מחזורי' : 'פתיחת כלל משלוח מחזורי'"
+              (click)="toggleRecurringSection(rule)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+          </div>
+          @if (isRecurringSectionOpen(rule)) {
+            <div [id]="'recurring-settings-' + rule.id" class="optional-rule-settings">
+              <div class="rule-clear-toolbar">
+                <button
+                  type="button"
+                  class="rule-clear-action"
+                  title="ניקוי כלל 5"
+                  aria-label="ניקוי כלל 5"
+                  [disabled]="ruleSaveLoading"
+                  (click)="clearRecurringRule(rule)"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5" />
+                  </svg>
+                  <span>ניקוי הכלל</span>
+                </button>
+              </div>
+              <div
+                [id]="'recurring-fields-' + rule.id"
+                class="form-grid compact dependency-fields recurring-fields"
+              >
+                <label class="recurring-days-field">
+                  כל כמה ימים
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="1"
+                    required
+                    [ngModel]="rule.trigger.recurringIntervalDays"
+                    (ngModelChange)="setRecurringIntervalDays(rule, $event)"
+                  />
+                </label>
+                <label>
+                  שעה
+                  <input
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="13:00"
+                    maxlength="5"
+                    pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"
+                    autocomplete="off"
+                    required
+                    [ngModel]="rule.trigger.recurringTimeOfDay"
+                    (ngModelChange)="setRuleTime(rule, 'recurringTimeOfDay', $event)"
+                    (keydown)="restrictRuleTimeKey(rule, 'recurringTimeOfDay', $event)"
+                  />
+                </label>
+                <label>
+                  תנאי עצירה
+                  <select
+                    required
+                    [ngModel]="rule.trigger.recurringStopCondition"
+                    (ngModelChange)="setRecurringStopCondition(rule, $event)"
+                  >
+                    <option value="discharged">{{ recurringStopLabels['discharged'] }}</option>
+                    <option value="never">{{ recurringStopLabels['never'] }}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          }
+        </section>
+
+        <section class="configurable-section rule-card compact-rule-card">
+          <div class="rule-card-head">
+            <div class="rule-title">
+              <h3>6. חלון זמן שליחה</h3>
+            </div>
+            <button
+              type="button"
+              class="rule-expand-toggle"
+              [class.is-open]="isSendWindowSectionOpen(rule)"
+              [attr.aria-expanded]="isSendWindowSectionOpen(rule)"
+              [attr.aria-controls]="'send-window-settings-' + rule.id"
+              [attr.aria-label]="isSendWindowSectionOpen(rule) ? 'סגירת חלון זמן שליחה' : 'פתיחת חלון זמן שליחה'"
+              (click)="toggleSendWindowSection(rule)"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m7 10 5 5 5-5" />
+              </svg>
+            </button>
+          </div>
+          @if (isSendWindowSectionOpen(rule)) {
+            <div class="rule-clear-toolbar with-description">
+              <p class="collapsible-rule-description">טווח שעות לשליחת הודעות</p>
+              <button
+                type="button"
+                class="rule-clear-action"
+                title="ניקוי כלל 6"
+                aria-label="ניקוי כלל 6"
+                [disabled]="ruleSaveLoading"
+                (click)="clearSendWindowRule(rule)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5" />
+                </svg>
+                <span>ניקוי הכלל</span>
+              </button>
+            </div>
+            <div
+              [id]="'send-window-settings-' + rule.id"
+              class="form-grid compact dependency-fields recurring-fields"
+            >
+              <label>
+                משעה
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="13:00"
+                  maxlength="5"
+                  pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"
+                  autocomplete="off"
+                  required
+                  [ngModel]="rule.trigger.sendWindowStartTime"
+                  (ngModelChange)="setRuleTime(rule, 'sendWindowStartTime', $event)"
+                  (keydown)="restrictRuleTimeKey(rule, 'sendWindowStartTime', $event)"
+                />
+              </label>
+              <label>
+                עד שעה
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  placeholder="13:00"
+                  maxlength="5"
+                  pattern="(?:[01][0-9]|2[0-3]):[0-5][0-9]"
+                  autocomplete="off"
+                  required
+                  [ngModel]="rule.trigger.sendWindowEndTime"
+                  (ngModelChange)="setRuleTime(rule, 'sendWindowEndTime', $event)"
+                  (keydown)="restrictRuleTimeKey(rule, 'sendWindowEndTime', $event)"
+                />
+              </label>
+            </div>
+          }
+        </section>
+
+      </div>
+
+      <footer class="drawer-footer">
+        @if (ruleSaveError) {
+          <p class="drawer-save-error" role="alert">{{ ruleSaveError }}</p>
+        }
+        <div class="drawer-footer-actions">
+          <button
+            type="button"
+            class="ghost-action"
+            [disabled]="ruleSaveLoading"
+            (click)="closeDrawer()"
+          >
+            ביטול
+          </button>
+          <button
+            type="button"
+            class="primary-action"
+            [disabled]="ruleSaveLoading || (isCreatingRule && !selectedApiTemplateId(rule))"
+            (click)="saveSelectedRule()"
+          >
+            {{ ruleSaveLoading ? 'שומר...' : 'שמירה' }}
+          </button>
+        </div>
+      </footer>
+    }
+  </aside>
+

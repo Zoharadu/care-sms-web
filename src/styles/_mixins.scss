@@ -1,0 +1,51 @@
+@mixin component-host-contents {
+  :host {
+    display: contents;
+  }
+}
+
+@mixin feedback-surface($border-color, $background-color, $text-color) {
+  border: 1px solid $border-color;
+  background: $background-color;
+  color: $text-color;
+}
+
+@mixin feedback-colors($border-color, $background-color, $text-color) {
+  border-color: $border-color;
+  background: $background-color;
+  color: $text-color;
+}
+
+@mixin disabled-state($opacity: 0.6) {
+  cursor: not-allowed;
+  opacity: $opacity;
+}
+
+@mixin vertical-scrollbar(
+  $thumb-color: var(--slate-400),
+  $track-color: var(--slate-100),
+  $hover-color: var(--slate-500),
+  $width: 8px
+) {
+  scrollbar-color: $thumb-color $track-color;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+
+  &::-webkit-scrollbar {
+    width: $width;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $track-color;
+    border-radius: var(--radius-pill);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $thumb-color;
+    border-radius: var(--radius-pill);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: $hover-color;
+  }
+}

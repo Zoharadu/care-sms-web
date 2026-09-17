@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <title>CareSMS</title>
+  <rect width="128" height="128" rx="28" fill="#0b1f4d" />
+  <path
+    fill="#2563eb"
+    d="M27 24h74a13 13 0 0 1 13 13v45a13 13 0 0 1-13 13H62l-25 18 5-18H27a13 13 0 0 1-13-13V37a13 13 0 0 1 13-13z"
+  />
+  <path fill="#fff" d="M57 39h14v14h14v14H71v14H57V67H43V53h14z" />
+</svg>

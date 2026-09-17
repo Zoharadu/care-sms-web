@@ -1,0 +1,77 @@
+@if (authenticationFeedback.message(); as authenticationMessage) {
+  <div class="authentication-error" role="alert" dir="rtl">
+    <span>{{ authenticationMessage }}</span>
+    <button
+      type="button"
+      aria-label="סגירת הודעת האימות"
+      (click)="authenticationFeedback.clear()"
+    >
+      ×
+    </button>
+  </div>
+}
+
+@if (isProjectSelectionPage) {
+  <router-outlet />
+} @else {
+<div class="app-shell" dir="rtl">
+  <div class="app-layout">
+    <aside class="sidebar-menu-panel" aria-label="תפריט ראשי">
+      <div class="sidebar-brand">
+        <a class="care-sms-logo" routerLink="/projects" aria-label="חזרה לבחירת פרויקט">
+          <img src="care-sms-logo.png" alt="CareSMS" />
+        </a>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="ניווט מערכת">
+        @for (tab of tabs; track tab.id) {
+          <a
+            class="tab-button"
+            [routerLink]="['/', tab.id]"
+            queryParamsHandling="preserve"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: false }"
+          >
+            <span>{{ tab.short }}</span>
+            {{ tab.label }}
+          </a>
+        }
+      </nav>
+    </aside>
+
+    <div class="app-content">
+      <header class="topbar">
+        <div class="page-title">
+          @if (projectName && categoryName) {
+            <nav class="context-breadcrumbs" aria-label="Breadcrumb">
+              <a [routerLink]="['/projects', projectId, 'categories']">{{ projectName }}</a>
+              <span aria-hidden="true">/</span>
+              <strong aria-current="page">{{ categoryName }}</strong>
+            </nav>
+          } @else {
+            <p class="eyebrow">ניהול הודעות קליניות</p>
+          }
+          <h1>מערכת ניהול מסרונים קליניים</h1>
+        </div>
+
+        <div class="top-actions">
+          @if (userInitials) {
+            <div
+              class="user-avatar"
+              [attr.aria-label]="'משתמש: ' + userName"
+              [attr.title]="userName"
+              role="img"
+            >
+              {{ userInitials }}
+            </div>
+          }
+        </div>
+      </header>
+
+      <main class="workspace">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+</div>
+}

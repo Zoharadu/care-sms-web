@@ -1,0 +1,20 @@
+<div class="template-phone-speaker"></div>
+<div class="template-phone-screen">
+  <div class="template-phone-brand">
+    <strong>{{ senderName }}</strong>
+    <span>שער הודעות SMS</span>
+  </div>
+  <div class="template-phone-rule"></div>
+  <div class="sms-bubble template-sms-bubble" [attr.dir]="direction">
+    @if (renderedMessage) {
+      {{ renderedMessage }}
+    } @else {
+      <span class="template-phone-empty-message">{{ emptyMessage }}</span>
+    }
+  </div>
+  <div class="template-phone-footer">
+    <span>מקטע SMS {{ messageStats.segments }}</span>
+    <span>תווים: {{ messageStats.length }}</span>
+  </div>
+</div>
+<div class="template-phone-home"></div>

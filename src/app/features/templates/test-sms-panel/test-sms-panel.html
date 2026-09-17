@@ -1,0 +1,52 @@
+@switch (section) {
+  @case ('action') {
+    <button
+      type="button"
+      class="primary-action test-action"
+      [disabled]="sending || phonesLoading || testPhones.length === 0"
+      (click)="testSmsRequested.emit()"
+    >
+      {{ sending ? 'שולח בקשת SMS...' : 'שליחת הודעת ניסיון' }}
+    </button>
+  }
+  @case ('status') {
+    @if (testStatus) {
+      <p
+        class="inline-status"
+        [class.create-template-error]="statusTone === 'error'"
+        [attr.role]="statusTone === 'error' ? 'alert' : 'status'"
+        aria-live="polite"
+      >
+        {{ testStatus }}
+      </p>
+    }
+  }
+  @case ('recipient') {
+    <label>
+      נמען בדיקה מאושר
+      <select
+        [ngModel]="selectedPhone"
+        [disabled]="sending || phonesLoading || testPhones.length === 0"
+        (ngModelChange)="testPhoneSelected.emit($event)"
+        aria-label="רשימת מספרי בדיקה מאושרת"
+      >
+        @if (phonesLoading) {
+          <option value="" disabled>טוען נמעני בדיקה...</option>
+        } @else {
+          @for (phone of testPhones; track phone.phoneNumber) {
+            <option [ngValue]="phone.phoneNumber">
+              {{ phone.name }} - {{ phone.phoneNumber }}
+            </option>
+          } @empty {
+            <option value="" disabled>לא נמצאו נמעני בדיקה</option>
+          }
+        }
+      </select>
+    </label>
+    @if (phonesError) {
+      <p class="inline-status create-template-error" role="alert">{{ phonesError }}</p>
+    } @else if (!phonesLoading && testPhones.length === 0) {
+      <p class="inline-status" role="status">לא נמצאו נמעני בדיקה.</p>
+    }
+  }
+}

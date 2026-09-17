@@ -1,0 +1,44 @@
+@use '../../../../styles/mixins' as shared;
+
+@include shared.component-host-contents;
+
+.placeholder-floating-tooltip {
+  position: fixed;
+  z-index: 2000;
+  width: max-content;
+  min-width: 120px;
+  max-width: min(240px, calc(100vw - 32px));
+  padding: 6px 9px;
+  border: 1px solid var(--slate-300);
+  border-radius: 7px;
+  background: var(--slate-50);
+  box-shadow: 0 6px 18px rgb(15 23 42 / 12%);
+  color: var(--slate-700);
+  direction: rtl;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  text-align: right;
+  transform: translate(-50%, -100%);
+  white-space: normal;
+}
+
+.placeholder-floating-tooltip::before,
+.placeholder-floating-tooltip::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  border: 7px solid transparent;
+  border-top-color: var(--slate-300);
+  content: '';
+  transform: translateX(-50%);
+}
+
+.placeholder-floating-tooltip::after {
+  top: calc(100% - 1px);
+  border-width: 6px;
+  border-top-color: var(--slate-50);
+}

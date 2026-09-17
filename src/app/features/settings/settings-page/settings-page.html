@@ -1,0 +1,189 @@
+<section class="screen settings-grid">
+  <div class="panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">sms_hospital</p>
+        <h2>{{ hospitals.length }} בתי חולים</h2>
+      </div>
+    </div>
+    <div class="catalog-list">
+      @if (hospitalsLoading) {
+        <p class="catalog-state-message">טוען בתי חולים...</p>
+      } @else if (hospitalsError) {
+        <p class="catalog-state-message error" role="alert">{{ hospitalsError }}</p>
+      } @else {
+        @for (hospital of hospitals; track hospital.id) {
+          <div class="catalog-row hospital-catalog-row">
+            <strong>{{ hospital.name }}</strong>
+            <small>{{ hospital.description || 'תיאור בית החולים לא התקבל מהשרת' }}</small>
+          </div>
+        } @empty {
+          <p class="catalog-state-message">לא נמצאו בתי חולים.</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">sms_unit</p>
+        <h2>{{ activeUnitsCount() }} יחידות פעילות</h2>
+      </div>
+    </div>
+    <div class="catalog-list">
+      @if (unitsLoading) {
+        <p class="catalog-state-message">טוען יחידות...</p>
+      } @else if (unitsError) {
+        <p class="catalog-state-message error" role="alert">{{ unitsError }}</p>
+      } @else {
+        @for (unit of units; track unit.hospitalId + '-' + unit.unitId) {
+          <div class="catalog-row unit-catalog-row">
+            <strong>{{ unit.unitName }}</strong>
+            <small>
+              בית חולים: {{ hospitalName(unit.hospitalId) }} ·
+              סוג יחידה: {{ unit.unitTypeName || unit.unitType || 'ללא סוג יחידה' }}
+            </small>
+          </div>
+        } @empty {
+          <p class="catalog-state-message">לא נמצאו יחידות פעילות.</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">sms_trigger_catalog</p>
+        <h2>{{ activeTriggerCount() }} טריגרים</h2>
+      </div>
+    </div>
+    <div class="catalog-list">
+      @if (triggersLoading) {
+        <p class="catalog-state-message">טוען טריגרים...</p>
+      } @else if (triggersError) {
+        <p class="catalog-state-message error" role="alert">{{ triggersError }}</p>
+      } @else {
+        @for (trigger of triggerCatalog; track trigger.triggerId) {
+          <div class="catalog-row trigger-catalog-row">
+            <strong>{{ trigger.triggerName }}</strong>
+            <small>{{ trigger.description || 'ללא תיאור' }}</small>
+          </div>
+        } @empty {
+          <p class="catalog-state-message">לא נמצאו טריגרים פעילים.</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">sms_placeholder_catalog</p>
+        <h2>{{ placeholders.length }} שדות</h2>
+      </div>
+    </div>
+    <div class="catalog-list">
+      @if (placeholdersLoading) {
+        <p class="catalog-state-message">טוען שדות...</p>
+      } @else if (placeholdersError) {
+        <p class="catalog-state-message error" role="alert">{{ placeholdersError }}</p>
+      } @else {
+        @for (placeholder of placeholders; track placeholder.placeholderId) {
+          <div class="catalog-row placeholder-catalog-row">
+            <strong>{{ placeholder.displayName || placeholder.placeholderName }}</strong>
+            <small>{{ placeholder.placeholderName }}</small>
+          </div>
+        } @empty {
+          <p class="catalog-state-message">לא נמצאו שדות.</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">sms_category</p>
+        <h2>{{ categories.length }} קטגוריות</h2>
+      </div>
+    </div>
+    <div class="catalog-list">
+      @if (categoriesLoading) {
+        <p class="catalog-state-message">טוען קטגוריות...</p>
+      } @else if (categoriesError) {
+        <p class="catalog-state-message error" role="alert">{{ categoriesError }}</p>
+      } @else {
+        @for (category of categories; track category.categoryId) {
+          <div class="catalog-row category-catalog-row">
+            <strong>{{ category.categoryName }}</strong>
+            <small>
+              {{ category.categoryType }} · {{ category.isActive ? 'פעילה' : 'לא פעילה' }}
+            </small>
+          </div>
+        } @empty {
+          <p class="catalog-state-message">לא נמצאו קטגוריות.</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">dbo.sms_rules</p>
+        <h2>{{ smsRules.length }} כללי שליחה</h2>
+      </div>
+    </div>
+    <div class="catalog-list">
+      @if (smsRulesLoading) {
+        <p class="catalog-state-message">טוען כללי שליחה...</p>
+      } @else if (smsRulesError) {
+        <p class="catalog-state-message error" role="alert">{{ smsRulesError }}</p>
+      } @else {
+        @for (rule of smsRules; track rule.ruleId) {
+          <div class="catalog-row sms-rule-catalog-row">
+            <strong>כלל {{ rule.ruleId }}</strong>
+            <small>
+              tt_id: {{ rule.ttId }} ·
+              תלות: {{ rule.dependOnTtId ?? 'ללא' }} ·
+              תוקף מרבי: {{ rule.maxTimeTokefInMinutes ?? 'לא הוגדר' }}
+            </small>
+          </div>
+        } @empty {
+          <p class="catalog-state-message">לא נמצאו כללי שליחה.</p>
+        }
+      }
+    </div>
+  </div>
+
+  <div class="panel schema-panel">
+    <div class="panel-heading">
+      <div>
+        <p class="eyebrow">מבנה מסד הנתונים</p>
+        <h2>סה״כ יש {{ schemaTables.length }} טבלאות</h2>
+      </div>
+    </div>
+    <div class="schema-list">
+      @for (table of schemaTables; track table.tableName) {
+        <article class="schema-row">
+          <div>
+            <strong class="schema-table-name">
+              {{ table.hebrewName }} - <span class="code">{{ table.tableName }}</span>
+            </strong>
+            <p>{{ table.purpose }}</p>
+          </div>
+          <small>
+            <span class="schema-detail-label">מפתחות הטבלה:</span>
+            {{ table.keys.join(' | ') }}
+          </small>
+          <small>
+            <span class="schema-detail-label">עמודות הטבלה:</span>
+            {{ table.columns.join(', ') }}
+          </small>
+        </article>
+      }
+    </div>
+  </div>
+</section>

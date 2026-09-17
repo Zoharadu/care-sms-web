@@ -1,0 +1,58 @@
+<div class="project-selection-page" dir="rtl">
+  <header class="project-header">
+    <div class="project-brand">
+      <img src="care-sms-logo.png" alt="CareSMS" />
+      <span>מערכת מסרונים</span>
+    </div>
+    <div class="user-greeting" >
+      שלום ל{{ userName }}
+    </div>
+  </header>
+
+  <main class="project-selection-content">
+    <section class="project-intro" aria-labelledby="project-page-title">
+      <h1 id="project-page-title">מערכת מסרונים למטופלים</h1>
+      <p>בחרו פרויקט לניהול המערכת</p>
+    </section>
+
+    @if (projectsLoading) {
+    <div class="project-status" role="status" aria-live="polite">
+      <span class="project-spinner" aria-hidden="true"></span>
+      <strong>טוען פרויקטים...</strong>
+    </div>
+    } @else if (projectsError) {
+    <div class="project-status project-status-error" role="alert">
+      <strong>{{ projectsError }}</strong>
+      <button type="button" (click)="loadProjects()">נסו שוב</button>
+    </div>
+    } @else {
+    <section class="projects-section" aria-label="בחירת פרויקט">
+      <header class="projects-heading">
+        <h2>המסלולים שלכם</h2>
+        <span>{{ projects.length }} מסלולים פעילים</span>
+      </header>
+
+      <div class="project-grid">
+        @for (project of projects; track project.projectId; let index = $index) {
+        <button type="button" class="project-card" [class.project-card-green]="index % 2 === 1"
+          [attr.aria-label]="'בחירת פרויקט ' + project.projectName" (click)="enterProject(project)">
+          <div class="project-card-meta">
+            <span>פרויקט {{ project.projectId }}</span>
+            <span class="active-project-label">פעיל</span>
+          </div>
+          <h3>{{ project.projectName }}</h3>
+          <span class="enter-project-button">
+            <span>פתיחת הפרויקט</span>
+            <span aria-hidden="true">←</span>
+          </span>
+        </button>
+        } @empty {
+        <div class="project-status" role="status">
+          <strong>לא נמצאו פרויקטים פעילים.</strong>
+        </div>
+        }
+      </div>
+    </section>
+    }
+  </main>
+</div>
