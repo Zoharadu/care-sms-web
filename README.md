@@ -1,84 +1,90 @@
 <p align="center">
-  <img src="public/care-sms-logo.png" alt="CareSMS" width="260">
+  <img src="frontend/public/care-sms-logo.png" alt="CareSMS" width="260">
 </p>
 
-# CareSMS Web
+# CareSMS
 
-CareSMS is an RTL-first web application for configuring patient SMS journeys.
-It provides a focused interface for managing message templates, clinical
-delivery rules, unit assignments, and controlled test sends.
+CareSMS is a full-stack demo application for configuring patient SMS journeys.
+The interface is RTL-first and supports message templates, clinical delivery
+rules, unit assignments, and controlled test sends.
 
-This repository contains the Angular frontend. It is designed to run with the
-companion CareSMS API and its public demo database.
+## Repository structure
 
-## Features
+```text
+frontend/          Angular 19 web application
+backend/           .NET 8 API and automated tests
+backend/Database/  Demo database creation and verification scripts
+```
 
-- Project and message-category selection.
-- Multilingual SMS templates with live message preview.
-- Clinical routing and delivery-rule management.
-- Hospital-unit and category assignments.
-- Placeholder and trigger catalog views.
-- Controlled test sends to allow-listed demo phone numbers.
-- Responsive, accessible, right-to-left user interface.
-
-## Technology
-
-- Angular 19
-- TypeScript
-- RxJS
-- SCSS and Tailwind CSS
-- Jasmine and Karma
+Each application also includes its own README with component-specific setup
+and development notes.
 
 ## Prerequisites
 
 - Node.js and npm
-- The CareSMS API running locally
-- The public demo database initialized by the API repository
+- .NET 8 SDK
+- SQL Server LocalDB
 
-## Local development
+## Quick start on Windows
 
-Install dependencies:
+### 1. Create the demo database
 
 ```powershell
-npm ci
+cd backend
+.\Database\Initialize-LocalDatabase.ps1
 ```
 
-Start the development server:
+The initializer creates a local database named `HospitalSms`. It deliberately
+stops if that database already exists and never drops or overwrites it.
+
+### 2. Start the API
+
+From the repository root:
 
 ```powershell
+dotnet run --project .\backend\HospitalSms.Admin.Api\HospitalSms.Admin.Api.csproj --launch-profile HospitalSms.Admin.Api
+```
+
+The local HTTP endpoint is `http://localhost:57979`.
+
+### 3. Start the frontend
+
+In a second terminal:
+
+```powershell
+cd frontend
+npm ci
 npm start
 ```
 
-Open <http://localhost:4200>. Requests under `/api/` are forwarded by
-`proxy.conf.json` to the local API at `http://localhost:57979`.
+Open <http://localhost:4200>. The Angular development proxy forwards `/api/`
+requests to the local API.
 
-## Available scripts
+## Validation
 
-| Command | Purpose |
-| --- | --- |
-| `npm start` | Start the Angular development server |
-| `npm run build` | Create a development build |
-| `npm run watch` | Rebuild automatically after source changes |
-| `npm test` | Run the unit-test suite |
+Run the frontend checks:
 
-## Project structure
+```powershell
+cd frontend
+npm run build
+npm test -- --watch=false --browsers=ChromeHeadless
+```
 
-```text
-public/                 Static assets and CareSMS branding
-src/app/features/       Feature pages and UI components
-src/app/api.service.ts  Typed API client
-src/environments/       Runtime environment configuration
+Run the backend tests:
+
+```powershell
+dotnet test .\backend\HospitalSms.sln
 ```
 
 ## Demo-data notice
 
-The public demo environment contains fictional records that use healthcare
-organization names only as illustrative examples. It contains no patient
-information, production credentials, real recipient numbers, or affiliation
-claims.
+The demo database contains fictional sample records and reserved demo phone
+numbers. It contains no patient information, real credentials, production
+service URLs, or affiliation claims.
 
 ## Security
 
-Do not commit credentials, private service URLs, patient information, or local
-environment overrides. The frontend uses a relative `/api/` URL so deployment
-configuration can remain outside the source tree.
+Do not commit credentials, patient information, database files, certificates,
+or machine-specific configuration. The repository `.gitignore` files exclude
+common local secrets, build output, dependency folders, and SQL Server data and
+backup files.
